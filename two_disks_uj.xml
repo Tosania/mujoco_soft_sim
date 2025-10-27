@@ -1,0 +1,269 @@
+<mujoco model="official_elastic_rod_cable_upright">
+  <compiler angle="radian" coordinate="local" inertiafromgeom="true"/>
+  <option timestep="0.002" gravity="0 0 -9.8" integrator="implicitfast"/>
+
+  <!-- 启用 MuJoCo 官方弹性 “cable” 插件 -->
+  <extension>
+    <plugin plugin="mujoco.elasticity.cable"/>
+  </extension>
+
+  <asset>
+    <!-- 蓝白棋盘纹理 -->
+    <texture name="texplane" type="2d" builtin="checker"
+             width="512" height="512" rgb1="0.2 0.4 0.8" rgb2="1 1 1" mark="none"/>
+    <material name="ground" texture="texplane" texrepeat="4 4" reflectance="0.2"/>
+  </asset>
+
+  <worldbody>
+    <!-- 地面 -->
+    <geom name="floor" type="plane" size="3 3 0.1"
+          material="ground" contype="1" conaffinity="1"
+          friction="1 0.005 0.0001"/>
+
+    <!-- 竖直的弹性杆：将原本沿 x 的 cable 通过父 body 旋转到 z 方向 -->
+    <body name="rod_base" pos="0 0 0.3"> <!-- 略抬起 1 cm，避免与地面接触穿插 -->
+      <site name="base_north"  pos="0 0.035 0.00" size="0.001" rgba="0 1 0 1"/>
+      <site name="base_south" pos="0.0 -0.035 0.00" size="0.001" rgba="0 1 0 1"/>
+      <site name="base_west" pos="-0.035 0 0.00" size="0.001" rgba="0 1 0 1"/>
+      <site name="base_east" pos="0.035 0 0.00" size="0.001" rgba="0 1 0 1"/>
+      <!-- 绕 y 轴 +90°：x 轴 -> z 轴 -->
+      <body name="rod_upright" >
+        <composite prefix="rod" type="cable"
+                   curve="0 0 s"             
+                   count="81 1 1"          
+                   size="0.4 0 0"          
+                   offset="0 0 0"           
+                   initial="fixed">
+
+          <!-- 物理参数：弯曲与扭转刚度 -->
+          <plugin plugin="mujoco.elasticity.cable">
+            <config key="twist" value="5e8"/>
+            <config key="bend"  value="1e8"/>
+            <!-- vmax 可设 0 表示不限制；这里给一个适中的限制以保持数值稳定 -->
+            <config key="vmax"  value="0"/>
+          </plugin>
+
+          <!-- 每段主关节的阻尼与等效转动惯量（稳定性） -->
+          <joint kind="main" damping="12" armature="0.02"/>
+
+          <!-- 线缆段的可视几何（胶囊半径约 7.5 mm） -->
+          <geom type="capsule" size="0.0045" rgba="0.8 0.2 0.1 1"/>
+          
+        </composite>
+      </body>
+
+      <!-- 可视化底端位置的小标记（非必须） -->
+      <site name="rod_root" pos="0 0 0" size="0.01" rgba="0.1 0.5 0.9 1"/>
+    </body>
+
+    <body name="ring_1_body" pos="0 0 0.34">
+    <joint type="free"/>
+      <geom name="ring_1" type="cylinder" size="0.04 0.004"
+            rgba="0.2 0.2 0.2 0.5" contype="1" conaffinity="1"/>
+      <site name="ring1_north"  pos="0 0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring1_south"  pos="0 -0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring1_east"  pos="0.035 0.0 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring1_west"  pos="-0.035 0 0" size="0.003" rgba="1 0 0 1"/>
+    </body>
+    
+    <body name="ring_2_body" pos="0 0 0.38">
+    <joint type="free"/>
+      <geom name="ring_2" type="cylinder" size="0.04 0.004"
+            rgba="0.2 0.2 0.2 0.5" contype="1" conaffinity="1"/>
+      <site name="ring2_north"  pos="0 0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring2_south"  pos="0 -0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring2_east"  pos="0.035 0.0 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring2_west"  pos="-0.035 0 0" size="0.003" rgba="1 0 0 1"/>
+    </body>
+
+    <body name="ring_3_body" pos="0 0 0.42">
+    <joint type="free"/>
+      <geom name="ring_3" type="cylinder" size="0.04 0.004"
+            rgba="0.2 0.2 0.2 0.5" contype="1" conaffinity="1"/>
+      <site name="ring3_north"  pos="0 0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring3_south"  pos="0 -0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring3_east"  pos="0.035 0.0 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring3_west"  pos="-0.035 0 0" size="0.003" rgba="1 0 0 1"/>
+    </body>
+
+    <body name="ring_4_body" pos="0 0 0.46">
+    <joint type="free"/>
+      <geom name="ring_4" type="cylinder" size="0.04 0.004"
+            rgba="0.2 0.2 0.2 0.5" contype="1" conaffinity="1"/>
+      <site name="ring4_north"  pos="0 0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring4_south"  pos="0 -0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring4_east"  pos="0.035 0.0 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring4_west"  pos="-0.035 0 0" size="0.003" rgba="1 0 0 1"/>
+    </body>
+
+    <body name="ring_5_body" pos="0 0 0.50">
+    <joint type="free"/>
+      <geom name="ring_5" type="cylinder" size="0.04 0.004"
+            rgba="0.2 0.2 0.2 0.5" contype="1" conaffinity="1"/>
+      <site name="ring5_north"  pos="0 0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring5_south"  pos="0 -0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring5_east"  pos="0.035 0.0 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring5_west"  pos="-0.035 0 0" size="0.003" rgba="1 0 0 1"/>
+    </body>
+
+    <body name="ring_6_body" pos="0 0 0.54">
+    <joint type="free"/>
+      <geom name="ring_6" type="cylinder" size="0.04 0.004"
+            rgba="0.2 0.2 0.2 0.5" contype="1" conaffinity="1"/>
+      <site name="ring6_north"  pos="0 0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring6_south"  pos="0 -0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring6_east"  pos="0.035 0.0 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring6_west"  pos="-0.035 0 0" size="0.003" rgba="1 0 0 1"/>
+    </body>
+
+    <body name="ring_7_body" pos="0 0 0.58">
+    <joint type="free"/>
+      <geom name="ring_7" type="cylinder" size="0.04 0.004"
+            rgba="0.2 0.2 0.2 0.5" contype="1" conaffinity="1"/>
+      <site name="ring7_north"  pos="0 0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring7_south"  pos="0 -0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring7_east"  pos="0.035 0.0 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring7_west"  pos="-0.035 0 0" size="0.003" rgba="1 0 0 1"/>
+    </body>
+
+    <body name="ring_8_body" pos="0 0 0.62">
+    <joint type="free"/>
+      <geom name="ring_8" type="cylinder" size="0.04 0.004"
+            rgba="0.2 0.2 0.2 0.5" contype="1" conaffinity="1"/>
+      <site name="ring8_north"  pos="0 0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring8_south"  pos="0 -0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring8_east"  pos="0.035 0.0 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring8_west"  pos="-0.035 0 0" size="0.003" rgba="1 0 0 1"/>
+    </body>
+
+    <body name="ring_9_body" pos="0 0 0.66">
+    <joint type="free"/>
+      <geom name="ring_9" type="cylinder" size="0.04 0.004"
+            rgba="0.2 0.2 0.2 0.5" contype="1" conaffinity="1"/>
+      <site name="ring9_north"  pos="0 0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring9_south"  pos="0 -0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring9_east"  pos="0.035 0.0 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring9_west"  pos="-0.035 0 0" size="0.003" rgba="1 0 0 1"/>
+    </body>
+    <body name="ring_10_body" pos="0 0 0.70">
+    <joint type="free"/>
+      <geom name="ring_10" type="cylinder" size="0.04 0.004"
+            rgba="0.2 0.2 0.2 0.5" contype="1" conaffinity="1"/>
+      <site name="ring10_north"  pos="0 0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring10_south"  pos="0 -0.035 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring10_east"  pos="0.035 0.0 0.00" size="0.003" rgba="1 0 0 1"/>
+      <site name="ring10_west"  pos="-0.035 0 0" size="0.003" rgba="1 0 0 1"/>
+      <site name="rod_tip" pos="0 0 0.004" size="0.002" rgba="1 1 0 1"/>
+    </body>
+
+    <body name="end_mass" pos="0 0 0.7">
+      <joint type="free"/>
+      <geom name="tip_mass" type="sphere" size="0.015"
+            mass="0.5" rgba="0.2 0.2 0.8 1"
+            contype="1" conaffinity="1"/>
+    </body>
+  </worldbody>
+
+
+  <tendon>
+
+  <spatial name="tendon_north_1" width="0.002" rgba="0.1 0.1 0.9 1">
+    <site site="base_north"/>
+    <site site="ring1_north"/>
+    <site site="ring2_north"/>
+    <site site="ring3_north"/>
+    <site site="ring4_north"/>
+    <site site="ring5_north"/>
+  </spatial>
+
+  <spatial name="tendon_south_1" width="0.002" rgba="0.1 0.1 0.9 1">
+    <site site="base_south"/>
+    <site site="ring1_south"/>
+    <site site="ring2_south"/>
+    <site site="ring3_south"/>
+    <site site="ring4_south"/>
+    <site site="ring5_south"/>
+  </spatial>
+
+  <spatial name="tendon_east_1" width="0.002" rgba="0.1 0.1 0.9 1">
+    <site site="base_east"/>
+    <site site="ring1_east"/>
+    <site site="ring2_east"/>
+    <site site="ring3_east"/>
+    <site site="ring4_east"/>
+    <site site="ring5_east"/>
+  </spatial>
+
+  <spatial name="tendon_west_1" width="0.002" rgba="0.1 0.1 0.9 1">
+    <site site="base_west"/>
+    <site site="ring1_west"/>
+    <site site="ring2_west"/>
+    <site site="ring3_west"/>
+    <site site="ring4_west"/>
+    <site site="ring5_west"/>
+  </spatial>
+
+  <spatial name="tendon_north_2" width="0.002" rgba="0.9 0.1 0.1 1">
+    <site site="ring5_north"/>
+    <site site="ring6_north"/>
+    <site site="ring7_north"/>
+    <site site="ring8_north"/>
+    <site site="ring9_north"/>
+    <site site="ring10_north"/>
+  </spatial>
+
+  <spatial name="tendon_south_2" width="0.002" rgba="0.9 0.1 0.1 1">
+    <site site="ring5_south"/>
+    <site site="ring6_south"/>
+    <site site="ring7_south"/>
+    <site site="ring8_south"/>
+    <site site="ring9_south"/>
+    <site site="ring10_south"/>
+  </spatial>
+
+  <spatial name="tendon_east_2" width="0.002" rgba="0.9 0.1 0.1 1">
+    <site site="ring5_east"/>
+    <site site="ring6_east"/>
+    <site site="ring7_east"/>
+    <site site="ring8_east"/>
+    <site site="ring9_east"/>
+    <site site="ring10_east"/>
+  </spatial>
+
+  <spatial name="tendon_west_2" width="0.002" rgba="0.9 0.1 0.1 1">
+    <site site="ring5_west"/>
+    <site site="ring6_west"/>
+    <site site="ring7_west"/>
+    <site site="ring8_west"/>
+    <site site="ring9_west"/>
+    <site site="ring10_west"/>
+  </spatial>
+</tendon>
+
+  <actuator>
+  <position name="len_north_1" tendon="tendon_north_1" ctrllimited="true" ctrlrange="0 0.4" kp="8000" kv="20" />
+  <position name="len_south_1" tendon="tendon_south_1" ctrllimited="true" ctrlrange="0 0.4" kp="8000" kv="20" />
+  <position name="len_east_1" tendon="tendon_east_1" ctrllimited="true" ctrlrange="0 0.4" kp="8000" kv="20" />
+  <position name="len_west_1" tendon="tendon_west_1" ctrllimited="true" ctrlrange="0 0.4" kp="8000" kv="20" />
+  <position name="len_north_2" tendon="tendon_north_2" ctrllimited="true" ctrlrange="0 0.4" kp="8000" kv="20" />
+  <position name="len_south_2" tendon="tendon_south_2" ctrllimited="true" ctrlrange="0 0.4" kp="8000" kv="20" />
+  <position name="len_east_2" tendon="tendon_east_2" ctrllimited="true" ctrlrange="0 0.4" kp="8000" kv="20" />
+  <position name="len_west_2" tendon="tendon_west_2" ctrllimited="true" ctrlrange="0 0.4" kp="8000" kv="20" />
+
+</actuator>
+
+  <equality>
+    <weld body1="rodB_first" body2="rod_base" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
+    <weld body1="rodB_8" body2="ring_1_body" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
+    <weld body1="rodB_16" body2="ring_2_body" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
+    <weld body1="rodB_24" body2="ring_3_body" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
+    <weld body1="rodB_32" body2="ring_4_body" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
+    <weld body1="rodB_40" body2="ring_5_body" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
+    <weld body1="rodB_48" body2="ring_6_body" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
+    <weld body1="rodB_56" body2="ring_7_body" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
+    <weld body1="rodB_64" body2="ring_8_body" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
+    <weld body1="rodB_72" body2="ring_9_body" solref="0.0001 1"  solimp="0.9 0.95 0.001 0.5 2"/>
+    <weld body1="rodB_last" body2="ring_10_body" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
+    <weld body1="rodB_last" body2="end_mass" solref="0.00001 1" solimp="0.9 0.9 0.01"/>
+  </equality>
+</mujoco>
