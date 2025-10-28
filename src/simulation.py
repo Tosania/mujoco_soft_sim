@@ -5,11 +5,22 @@ import mujoco
 import numpy as np
 import mujoco.viewer
 import os
+from pathlib import Path
 
 
 class SoftRobot:
     def __init__(self, xml_path: str):
-        self.xml_path = xml_path
+        p = Path(xml_path)
+        if not p.is_absolute():
+            # 优先从当前文件上一层找 xml 目录
+            base = (
+                Path(__file__).resolve().parents[1]
+                if (Path(__file__).parent.name == "src")
+                else Path(__file__).resolve().parent
+            )
+            cand = base / "xml" / p.name if p.parent == Path(".") else (base / p)
+            p = cand.resolve()
+        self.xml_path = str(p)
         self.model = mujoco.MjModel.from_xml_path(self.xml_path)
         self.data = mujoco.MjData(self.model)
         print(f"模型加载成功: {self.xml_path}")
@@ -227,18 +238,18 @@ class SoftRobot:
             mujoco.mj_step(self.model, self.data)
 
 
-if __name__ == "__main__":
-    robot = SoftRobot("two_disks_uj.xml")
-    # robot.save_model_info()
-    robot.control("len_south_1", 0.19)
-    robot.control("len_north_1", 0.2)
-    robot.control("len_west_1", 0.2)
-    robot.control("len_east_1", 0.2)
+# if __name__ == "__main__":
+#     robot = SoftRobot("two_disks_uj.xml")
+#     # robot.save_model_info()
+#     robot.control("len_south_1", 0.19)
+#     robot.control("len_north_1", 0.2)
+#     robot.control("len_west_1", 0.2)
+#     robot.control("len_east_1", 0.2)
 
-    robot.control("len_south_2", 0.2)
-    robot.control("len_north_2", 0.2)
-    robot.control("len_west_2", 0.2)
-    robot.control("len_east_2", 0.2)
-    robot.runview()
-    robot.save_model_info()
-    # robot.run_all_sp()
+#     robot.control("len_south_2", 0.2)
+#     robot.control("len_north_2", 0.2)
+#     robot.control("len_west_2", 0.2)
+#     robot.control("len_east_2", 0.2)
+#     robot.runview()
+# robot.save_model_info()
+# robot.run_all_sp()

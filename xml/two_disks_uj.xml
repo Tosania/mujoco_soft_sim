@@ -1,6 +1,12 @@
 <mujoco model="official_elastic_rod_cable_upright">
+<size      
+  nstack="20000000"    
+  nconmax="8000"      
+  njmax="300000"      
+/>
+
   <compiler angle="radian" coordinate="local" inertiafromgeom="true"/>
-  <option timestep="0.002" gravity="0 0 -9.8" integrator="implicitfast"/>
+  <option timestep="0.002" gravity="0 0 -9.8" integrator="implicitfast" />
 
   <!-- 启用 MuJoCo 官方弹性 “cable” 插件 -->
   <extension>
@@ -156,12 +162,6 @@
       <site name="rod_tip" pos="0 0 0.004" size="0.002" rgba="1 1 0 1"/>
     </body>
 
-    <body name="end_mass" pos="0 0 0.7">
-      <joint type="free"/>
-      <geom name="tip_mass" type="sphere" size="0.015"
-            mass="0.5" rgba="0.2 0.2 0.8 1"
-            contype="1" conaffinity="1"/>
-    </body>
   </worldbody>
 
 
@@ -241,14 +241,14 @@
 </tendon>
 
   <actuator>
-  <position name="len_north_1" tendon="tendon_north_1" ctrllimited="true" ctrlrange="0 0.4" kp="8000" kv="20" />
-  <position name="len_south_1" tendon="tendon_south_1" ctrllimited="true" ctrlrange="0 0.4" kp="8000" kv="20" />
-  <position name="len_east_1" tendon="tendon_east_1" ctrllimited="true" ctrlrange="0 0.4" kp="8000" kv="20" />
-  <position name="len_west_1" tendon="tendon_west_1" ctrllimited="true" ctrlrange="0 0.4" kp="8000" kv="20" />
-  <position name="len_north_2" tendon="tendon_north_2" ctrllimited="true" ctrlrange="0 0.4" kp="8000" kv="20" />
-  <position name="len_south_2" tendon="tendon_south_2" ctrllimited="true" ctrlrange="0 0.4" kp="8000" kv="20" />
-  <position name="len_east_2" tendon="tendon_east_2" ctrllimited="true" ctrlrange="0 0.4" kp="8000" kv="20" />
-  <position name="len_west_2" tendon="tendon_west_2" ctrllimited="true" ctrlrange="0 0.4" kp="8000" kv="20" />
+  <position name="len_north_1" tendon="tendon_north_1" ctrllimited="true" ctrlrange="0 0.4" kp="800" kv="20" />
+  <position name="len_south_1" tendon="tendon_south_1" ctrllimited="true" ctrlrange="0 0.4" kp="800" kv="20" />
+  <position name="len_east_1" tendon="tendon_east_1" ctrllimited="true" ctrlrange="0 0.4" kp="800" kv="20" />
+  <position name="len_west_1" tendon="tendon_west_1" ctrllimited="true" ctrlrange="0 0.4" kp="800" kv="20" />
+  <position name="len_north_2" tendon="tendon_north_2" ctrllimited="true" ctrlrange="0 0.4" kp="800" kv="20" />
+  <position name="len_south_2" tendon="tendon_south_2" ctrllimited="true" ctrlrange="0 0.4" kp="800" kv="20" />
+  <position name="len_east_2" tendon="tendon_east_2" ctrllimited="true" ctrlrange="0 0.4" kp="800" kv="20" />
+  <position name="len_west_2" tendon="tendon_west_2" ctrllimited="true" ctrlrange="0 0.4" kp="800" kv="20" />
 
 </actuator>
 
@@ -262,8 +262,7 @@
     <weld body1="rodB_48" body2="ring_6_body" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
     <weld body1="rodB_56" body2="ring_7_body" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
     <weld body1="rodB_64" body2="ring_8_body" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
-    <weld body1="rodB_72" body2="ring_9_body" solref="0.0001 1"  solimp="0.9 0.95 0.001 0.5 2"/>
+    <weld body1="rodB_72" body2="ring_9_body" solref="0.0001 1"  solimp="0.9 0.9 0.01"/>
     <weld body1="rodB_last" body2="ring_10_body" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
-    <weld body1="rodB_last" body2="end_mass" solref="0.00001 1" solimp="0.9 0.9 0.01"/>
   </equality>
 </mujoco>
