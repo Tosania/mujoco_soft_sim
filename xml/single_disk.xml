@@ -120,32 +120,6 @@
     <site site="ring5_north"/>
   </spatial>
 
-  <spatial name="tendon_south" width="0.002" rgba="0.1 0.1 0.9 1">
-    <site site="base_south"/>
-    <site site="ring1_south"/>
-    <site site="ring2_south"/>
-    <site site="ring3_south"/>
-    <site site="ring4_south"/>
-    <site site="ring5_south"/>
-  </spatial>
-
-  <spatial name="tendon_east" width="0.002" rgba="0.1 0.1 0.9 1">
-    <site site="base_east"/>
-    <site site="ring1_east"/>
-    <site site="ring2_east"/>
-    <site site="ring3_east"/>
-    <site site="ring4_east"/>
-    <site site="ring5_east"/>
-  </spatial>
-
-  <spatial name="tendon_west" width="0.002" rgba="0.1 0.1 0.9 1">
-    <site site="base_west"/>
-    <site site="ring1_west"/>
-    <site site="ring2_west"/>
-    <site site="ring3_west"/>
-    <site site="ring4_west"/>
-    <site site="ring5_west"/>
-  </spatial>
 </tendon>
 
   <actuator>

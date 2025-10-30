@@ -75,10 +75,10 @@ def main():
     # 极简训练配置（你可以把 total_timesteps 调大）
     agent = SoftRodRL(
         xml_path="./xml/two_disks_uj.xml",  # 你的模型XML
-        n_envs=2,  # 最小可用配置
+        n_envs=1,  # 最小可用配置
         total_timesteps=10_00,  # 先小规模验证流程
         eval_every_steps=2_00,  # 定期评估并保存best_model
-        eval_episodes=5,
+        eval_episodes=0,
         render_mode="none",  # 训练禁用渲染以提速
         log_dir="runs/softrod",  # TensorBoard 日志与模型保存目录
         # policy_kwargs / learn_kwargs 都可保持默认
@@ -96,5 +96,5 @@ def main():
 
 
 if __name__ == "__main__":
-    visualize_rollout(model_path=None, steps=2000)
-# main()
+    # visualize_rollout(model_path=None, steps=2000)
+    main()

@@ -35,7 +35,7 @@ def main():
     model, data = robot.model, robot.data
     model.opt.timestep = float(DT)
 
-    tendons = ["tendon_north", "tendon_south", "tendon_east", "tendon_west"]
+    tendons = ["tendon_north"]
 
     # 对应四个长度控制执行器（如有缺失，可自行调整或 try/except 跳过）
     base_len_actuators = []
@@ -65,8 +65,9 @@ def main():
                     tendon_act_map[tn].append(a)
 
     # 生成设定点序列
-    sweep = np.linspace(SWEEP_START, SWEEP_STOP, SWEEP_STEPS)
-
+    sweep_down = np.linspace(SWEEP_START, SWEEP_STOP, SWEEP_STEPS)
+    sweep_up = np.linspace(SWEEP_STOP, SWEEP_START, SWEEP_STEPS)
+    sweep = np.concatenate([sweep_down, sweep_up[1:]])  # 避免重复中点
     # ======= 存储数组（每步采样）=======
     time_s = []  # 时间序列
     bend_deg = []  # 总弯曲角度

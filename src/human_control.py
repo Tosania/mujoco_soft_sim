@@ -1,193 +1,145 @@
-# manual_keyboard_direct.py
-# 仅用 simulation.SoftRobot；零参数；直接键位映射：
-#  1..8 -> 第1..8条 绳子往里缩(减小长度)
-#  QWERTYUI -> 第1..8条 绳子往外放(增大长度)
-#  + / - 调整步进；R 复位到中点；P 打印当前值
+# keyboard_control.py
+# 用法: python keyboard_control.py
+# 说明: 在终端里按数字键 1..8 触发对应电机的短脉冲力（见脚注）
+# 依赖: mujoco, numpy, simulation.SoftRobot（请确保 PYTHONPATH 包含项目路径）
 
-import re, threading, time
-import numpy as np
+import sys
+import time
+import select
+import termios
+import tty
+from pathlib import Path
+
 import mujoco
-import mujoco.viewer
-import tkinter as tk
+import numpy as np
 from simulation import SoftRobot
 
-# ===== 默认配置（如需改，改这里即可） ==========================
-XML_NAME = "two_disks_uj.xml"  # SoftRobot 会自行在 xml 目录下寻找
-ACT_REGEX = r"^len_"  # 仅控制以 len_ 开头的执行器（绳长执行器）
-RENDER_HZ = 60
-SUBSTEPS = 1
-INIT_STEP = 0.001  # 每次按键的长度改变量
-# ============================================================
+# ---------- 用户可调参数 ----------
+XML_PATH = "./xml/two_disks_uj.xml"  # 如果你的 xml 在别处，改这里
+FORCE = 20.0  # 按键触发时给电机的控制值（motor 的 ctrl）
+DURATION_S = 0.12  # 每次按键持续时间（秒）
+DT = 0.002  # 仿真步长（应与 xml 中 opt.timestep 一致）
+RENDER_HZ = 60  # 渲染帧率
+
+# ---------- 键 -> actuator 名称 映射 ----------
+# 根据 two_disks_uj.xml 里的 actuator 名称 (mot_*_1 / mot_*_2)
+KEY_MAP = {
+    "1": "mot_east_1",
+    "2": "mot_west_1",
+    "3": "mot_north_1",
+    "4": "mot_south_1",
+    "5": "mot_east_2",
+    "6": "mot_west_2",
+    "7": "mot_north_2",
+    "8": "mot_south_2",
+    # 你可以在这里添加更多键（例如 q 放大/缩小 FORCE 等）
+}
 
 
-def enum_actuators(model, name_filter):
-    pat = re.compile(name_filter) if name_filter else None
-    items = []
-    for a in range(model.nu):
-        name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, a) or f"act_{a}"
-        if (pat is None) or pat.search(name):
-            lo, hi = float(model.actuator_ctrlrange[a, 0]), float(
-                model.actuator_ctrlrange[a, 1]
-            )
-            items.append((a, name, (lo, hi)))
-    items.sort(key=lambda x: (x[1], x[0]))  # 名称优先稳定排序
-    return items
+# ---------- 辅助：终端单字符非阻塞读取 (Unix) ----------
+class NonBlockingInput:
+    def __enter__(self):
+        self.fd = sys.stdin.fileno()
+        self.old_settings = termios.tcgetattr(self.fd)
+        tty.setcbreak(self.fd)
+        return self
 
+    def __exit__(self, exc_type, exc, tb):
+        termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old_settings)
 
-def sim_thread(xml_path, act_infos, shared, stop_flag, hz=60, substeps=1):
-    robot = SoftRobot(xml_path)
-    model, data = robot.model, robot.data
-
-    # 初值置中
-    for a, _, (lo, hi) in act_infos:
-        data.ctrl[a] = (lo + hi) / 2.0
-    mujoco.mj_forward(model, data)
-
-    frame_dt = 1.0 / max(1, hz)
-    with mujoco.viewer.launch_passive(model, data) as v:
-        nxt = time.time()
-        while not stop_flag["stop"]:
-            if hasattr(v, "is_running") and not v.is_running():
-                break
-
-            # 应用共享控制
-            with shared["lock"]:
-                for a, _, (lo, hi) in act_infos:
-                    data.ctrl[a] = float(np.clip(shared["ctrl"][a], lo, hi))
-
-            for _ in range(max(1, int(substeps))):
-                mujoco.mj_step(model, data)
-            v.sync()
-
-            nxt += frame_dt
-            sleep_t = nxt - time.time()
-            if sleep_t > 0:
-                time.sleep(sleep_t)
-            else:
-                nxt = time.time()
+    def get_char(self, timeout=0.0):
+        # timeout: 秒（float），0 表示立刻返回（非阻塞）
+        r, _, _ = select.select([sys.stdin], [], [], timeout)
+        if r:
+            return sys.stdin.read(1)
+        return None
 
 
 def main():
-    # 先用临时实例拿到 model 来枚举 actuator
-    tmp = SoftRobot(XML_NAME)
-    model = tmp.model
-    act_infos = enum_actuators(model, ACT_REGEX)
-    if not act_infos:
-        all_names = [
-            mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, a) or f"act_{a}"
-            for a in range(model.nu)
-        ]
-        raise SystemExit(
-            f"未匹配到任何执行器（ACT_REGEX={ACT_REGEX}）。可用：{all_names}"
-        )
+    # 检查 xml 文件
+    xml_p = Path(XML_PATH)
+    if not xml_p.exists():
+        print(f"[ERR] XML not found: {XML_PATH}")
+        return
 
-    # 映射：索引0..7 -> (缩键, 放键)
-    # 1..8 缩；QWERTYUI 放
-    shrink_keys = list("12345678")
-    extend_keys = list("QWERTYUI")
-    # 如果执行器少于8条，自动只取前 N 条
-    n = min(len(act_infos), 8)
-    shrink_keys = shrink_keys[:n]
-    extend_keys = extend_keys[:n]
+    robot = SoftRobot(XML_PATH)
+    model, data = robot.model, robot.data
 
-    # 共享状态
-    shared = {"ctrl": {}, "step": float(INIT_STEP), "lock": threading.Lock()}
-    for a, _, (lo, hi) in act_infos:
-        shared["ctrl"][a] = (lo + hi) / 2.0
+    # 把时间步写回 model（以脚本里的 DT 为准）
+    model.opt.timestep = float(DT)
+    steps_per_frame = max(1, int(round((1.0 / RENDER_HZ) / DT)))
 
-    stop_flag = {"stop": False}
-    thd = threading.Thread(
-        target=sim_thread,
-        args=(XML_NAME, act_infos, shared, stop_flag, int(RENDER_HZ), int(SUBSTEPS)),
-        daemon=True,
-    )
-    thd.start()
+    # 解析 KEY_MAP 中的 actuator id（若不存在则 warn）
+    key_to_actid = {}
+    for k, aname in KEY_MAP.items():
+        aid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, aname)
+        if aid == -1:
+            print(f"[WARN] actuator '{aname}' not found in model (key {k})")
+        else:
+            key_to_actid[k] = aid
 
-    # Tk 用于捕获键盘与显示状态提示
-    root = tk.Tk()
-    root.title("直接键控：1-8缩，QWERTYUI放（请保持此窗口为焦点）")
-    info = tk.StringVar()
+    # 记录哪些 act_id 当前处于“激活脉冲中” -> 剩余步数
+    pulse_remaining = {aid: 0 for aid in key_to_actid.values()}
 
-    def format_state():
-        lines = []
-        for i, (a, name, (lo, hi)) in enumerate(act_infos[:n]):
-            val = shared["ctrl"][a]
-            lines.append(
-                f"[{i+1}/{extend_keys[i]}] {name}: {val:.6f}  [{lo:.4f},{hi:.4f}]"
-            )
-        return "步进(step): %.6f\n%s" % (shared["step"], "\n".join(lines))
+    # 计算脉冲步数
+    pulse_steps = max(1, int(round(DURATION_S / DT)))
 
-    def refresh_label():
-        with shared["lock"]:
-            info.set(format_state())
-        root.after(120, refresh_label)
+    print("=== Keyboard control 启动 ===")
+    print("按键映射（按下即触发短脉冲）:")
+    for k, a in KEY_MAP.items():
+        print(f"  {k}: {a}")
+    print("按 Ctrl-C 退出。注意：需在终端中输入数字（非 viewer 窗口）。")
 
-    tk.Label(
-        root, textvariable=info, justify="left", padx=8, pady=10, font=("Menlo", 10)
-    ).pack()
+    # 打开 viewer（passive 模式）
+    with mujoco.viewer.launch_passive(model, data) as v:
+        # 进入非阻塞终端模式
+        with NonBlockingInput():
+            next_frame_t = time.time()
+            try:
+                while True:
+                    # 读取一次终端输入（非阻塞）
+                    ch = (
+                        sys.stdin.read(1)
+                        if select.select([sys.stdin], [], [], 0)[0]
+                        else None
+                    )
+                    if ch:
+                        if ch in key_to_actid:
+                            aid = key_to_actid[ch]
+                            pulse_remaining[aid] = pulse_steps
+                            # 立刻施力（会在后续 mj_step 中生效）
+                        elif ch == "\x03":  # Ctrl-C
+                            raise KeyboardInterrupt
+                        # 可在此扩展其它命令：比如调 FORCE、打印状态等
 
-    def bump_index(i, delta):
-        with shared["lock"]:
-            a, _, (lo, hi) = act_infos[i]
-            shared["ctrl"][a] = float(np.clip(shared["ctrl"][a] + delta, lo, hi))
+                    # 每帧推进若干仿真步
+                    for _ in range(steps_per_frame):
+                        # 在每个 mj_step 之前：设置 data.ctrl
+                        # 对于处于脉冲期的 actuator，设置为 FORCE（正负可扩展）
+                        for aid, rem in list(pulse_remaining.items()):
+                            if rem > 0:
+                                data.ctrl[aid] = FORCE
+                                pulse_remaining[aid] = rem - 1
+                            else:
+                                # 恢复到 0（不施力）
+                                data.ctrl[aid] = 0.0
 
-    def reset_mid():
-        with shared["lock"]:
-            for a, _, (lo, hi) in act_infos:
-                shared["ctrl"][a] = (lo + hi) / 2.0
+                        mujoco.mj_step(model, data)
 
-    def print_vals():
-        with shared["lock"]:
-            arr = [(name, shared["ctrl"][a]) for a, name, _ in act_infos[:n]]
-        print("当前 ctrl：", ", ".join([f"{nm}={v:.6f}" for nm, v in arr]))
-
-    def on_key(ev):
-        k = ev.keysym
-        # 步进调节
-        if k in ("plus", "KP_Add", "equal"):
-            with shared["lock"]:
-                shared["step"] = min(1.0, shared["step"] * 1.5)
-            return
-        if k in ("minus", "KP_Subtract"):
-            with shared["lock"]:
-                shared["step"] = max(1e-6, shared["step"] / 1.5)
-            return
-        # 复位 / 打印
-        if k in ("r", "R"):
-            reset_mid()
-            return
-        if k in ("p", "P"):
-            print_vals()
-            return
-
-        # 缩：1..8
-        if k in shrink_keys:
-            i = int(k) - 1
-            if 0 <= i < n:
-                bump_index(i, -shared["step"])
-            return
-
-        # 放：QWERTYUI（注意大小写）
-        if k in extend_keys or k.lower() in [c.lower() for c in extend_keys]:
-            # 转成索引
-            key_upper = k.upper()
-            if key_upper in extend_keys:
-                i = extend_keys.index(key_upper)
-                if 0 <= i < n:
-                    bump_index(i, +shared["step"])
-            return
-
-    root.bind("<Key>", on_key)
-    root.after(50, refresh_label)
-
-    def on_close():
-        stop_flag["stop"] = True
-        root.destroy()
-
-    root.protocol("WM_DELETE_WINDOW", on_close)
-    root.mainloop()
-    stop_flag["stop"] = True
-    thd.join(timeout=2.0)
+                    # 渲染并限速
+                    v.sync()
+                    # 简单限速
+                    next_frame_t += 1.0 / max(1, RENDER_HZ)
+                    sleep_t = next_frame_t - time.time()
+                    if sleep_t > 0:
+                        time.sleep(sleep_t)
+            except KeyboardInterrupt:
+                print("\n[INFO] 退出控制。")
+            finally:
+                # 退出前把所有控制置零
+                for aid in key_to_actid.values():
+                    data.ctrl[aid] = 0.0
+                mujoco.mj_forward(model, data)
 
 
 if __name__ == "__main__":

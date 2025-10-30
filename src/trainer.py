@@ -8,6 +8,7 @@ from typing import Optional, Dict, Any
 import os
 import numpy as np
 from pathlib import Path
+from stable_baselines3.common.vec_env import SubprocVecEnv
 
 # 在 SoftRodRL.__init__ 之前，加一个项目根推断（src/ 下、或根目录运行都能对）
 PROJECT_ROOT = (
@@ -37,7 +38,7 @@ class SoftRodRL:
         device: str = "auto",
         log_dir: str = None,
         total_timesteps: int = 200_000,
-        eval_every_steps: int = 10_000,
+        eval_every_steps: int = 10_0,
         eval_episodes: int = 5,
         render_mode: str = "none",  # 训练时一般设为 "none"
         policy_kwargs: Optional[Dict[str, Any]] = None,
@@ -74,7 +75,10 @@ class SoftRodRL:
 
     def _build_envs(self):
         self.env = make_vec_env(
-            self._make_env(self.render_mode), n_envs=self.n_envs, seed=self.seed
+            self._make_env(self.render_mode),
+            n_envs=self.n_envs,
+            seed=self.seed,
+            vec_env_cls=SubprocVecEnv,
         )
         # 评估环境：单环境、固定 seed 偏移，render 关闭
         self.eval_env = make_vec_env(
@@ -92,6 +96,7 @@ class SoftRodRL:
                 device=self.device,
                 seed=self.seed,
                 policy_kwargs=self.policy_kwargs,
+                n_steps=64,
             )
         else:
             raise NotImplementedError(

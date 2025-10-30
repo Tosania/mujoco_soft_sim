@@ -10,17 +10,17 @@ import os
 
 # ---- 固定常量 ----
 ACT_NAMES = [
-    "len_north_1",
-    "len_south_1",
-    "len_east_1",
-    "len_west_1",
-    "len_north_2",
-    "len_south_2",
-    "len_east_2",
-    "len_west_2",
+    "mot_north_1",
+    "mot_south_1",
+    "mot_east_1",
+    "mot_west_1",
+    "mot_north_2",
+    "mot_south_2",
+    "mot_east_2",
+    "mot_west_2",
 ]
-CTRL_LOW, CTRL_HIGH = 0.15, 0.25
-DEFAULT_BASE_LEN = 0.20
+CTRL_LOW, CTRL_HIGH = -30, 30
+DEFAULT_BASE_FORCE = 0
 DT = 0.002
 SUBSTEPS = 5
 MAX_STEPS = 1000
@@ -104,7 +104,7 @@ class SoftRobotReachEnv(gym.Env):
         self._goal = np.zeros(3, dtype=np.float32)
 
         # 初始状态
-        self.data.ctrl[self._act_ids] = DEFAULT_BASE_LEN
+        self.data.ctrl[self._act_ids] = DEFAULT_BASE_FORCE
         mujoco.mj_forward(self.model, self.data)
 
     # -------- Gym API --------
@@ -116,7 +116,7 @@ class SoftRobotReachEnv(gym.Env):
             self.np_random, _ = gym.utils.seeding.np_random(seed)
 
         mujoco.mj_resetData(self.model, self.data)
-        self.data.ctrl[self._act_ids] = DEFAULT_BASE_LEN
+        self.data.ctrl[self._act_ids] = DEFAULT_BASE_FORCE
         mujoco.mj_forward(self.model, self.data)
 
         # ✅ 改为三个独立随机数（立方体采样）
@@ -151,16 +151,31 @@ class SoftRobotReachEnv(gym.Env):
         pass
 
     def _get_obs(self) -> np.ndarray:
+        #   return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         tip = self.data.site_xpos[self.tip_sid].astype(np.float32)
         bend = float(
             self.robot.get_bending_angle(base_site=BASE_SITE, tip_site=TIP_SITE)
         )
         lens = self.data.ten_length[self._ten_ids].astype(np.float32)
-        tens = np.array(
-            [
-                self.robot.get_tendon_force("tendon" + n[3:])["tension"]
-                for n in ACT_NAMES
-            ],
-            dtype=np.float32,
-        )
+        tens = np.abs(self.data.actuator_force[self._act_ids]).astype(np.float32)
+        # np.array(
+        #     [
+        #         self.robot.get_tendon_force("tendon" + n[3:])["tension"]
+        #         for n in ACT_NAMES
+        #     ],
+        #     dtype=np.float32,
+        # )
         return np.concatenate([[bend], tip, lens, tens, self._goal]).astype(np.float32)
+
+
+# import time
+
+# if __name__ == "__main__":
+#     robot = SoftRobotReachEnv()
+#     a = 0
+#     print(time.time())
+#     while 1:
+#         a += 1
+#         if a == 100:
+#             print(time.time())
+#         robot.step([0, 0, 0, 0, 0, 0, 0, 0])

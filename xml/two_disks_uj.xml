@@ -6,7 +6,7 @@
 />
 
   <compiler angle="radian" coordinate="local" inertiafromgeom="true"/>
-  <option timestep="0.002" gravity="0 0 -9.8" integrator="implicitfast" />
+  <option timestep="0.002" gravity="0 0 0" integrator="implicitfast" />
 
   <!-- 启用 MuJoCo 官方弹性 “cable” 插件 -->
   <extension>
@@ -36,8 +36,8 @@
       <body name="rod_upright" >
         <composite prefix="rod" type="cable"
                    curve="0 0 s"             
-                   count="81 1 1"          
-                   size="0.4 0 0"          
+                   count="82 1 1"          
+                   size="0.405 0 0"          
                    offset="0 0 0"           
                    initial="fixed">
 
@@ -151,7 +151,7 @@
       <site name="ring9_east"  pos="0.035 0.0 0.00" size="0.003" rgba="1 0 0 1"/>
       <site name="ring9_west"  pos="-0.035 0 0" size="0.003" rgba="1 0 0 1"/>
     </body>
-    <body name="ring_10_body" pos="0 0 0.70">
+    <body name="ring_10_body" pos="0 0 0.7">
     <joint type="free"/>
       <geom name="ring_10" type="cylinder" size="0.04 0.004"
             rgba="0.2 0.2 0.2 0.5" contype="1" conaffinity="1"/>
@@ -159,7 +159,7 @@
       <site name="ring10_south"  pos="0 -0.035 0.00" size="0.003" rgba="1 0 0 1"/>
       <site name="ring10_east"  pos="0.035 0.0 0.00" size="0.003" rgba="1 0 0 1"/>
       <site name="ring10_west"  pos="-0.035 0 0" size="0.003" rgba="1 0 0 1"/>
-      <site name="rod_tip" pos="0 0 0.004" size="0.002" rgba="1 1 0 1"/>
+      <site name="rod_tip" pos="0 0 0.00" size="0.002" rgba="1 1 0 1"/>
     </body>
 
   </worldbody>
@@ -241,14 +241,15 @@
 </tendon>
 
   <actuator>
-  <position name="len_north_1" tendon="tendon_north_1" ctrllimited="true" ctrlrange="0 0.4" kp="800" kv="20" />
-  <position name="len_south_1" tendon="tendon_south_1" ctrllimited="true" ctrlrange="0 0.4" kp="800" kv="20" />
-  <position name="len_east_1" tendon="tendon_east_1" ctrllimited="true" ctrlrange="0 0.4" kp="800" kv="20" />
-  <position name="len_west_1" tendon="tendon_west_1" ctrllimited="true" ctrlrange="0 0.4" kp="800" kv="20" />
-  <position name="len_north_2" tendon="tendon_north_2" ctrllimited="true" ctrlrange="0 0.4" kp="800" kv="20" />
-  <position name="len_south_2" tendon="tendon_south_2" ctrllimited="true" ctrlrange="0 0.4" kp="800" kv="20" />
-  <position name="len_east_2" tendon="tendon_east_2" ctrllimited="true" ctrlrange="0 0.4" kp="800" kv="20" />
-  <position name="len_west_2" tendon="tendon_west_2" ctrllimited="true" ctrlrange="0 0.4" kp="800" kv="20" />
+  <motor name="mot_north_1" tendon="tendon_north_1" forcerange="-30 30" gear="1"/>
+  <motor name="mot_south_1" tendon="tendon_south_1" forcerange="-30 30" gear="1"/>
+  <motor name="mot_east_1"  tendon="tendon_east_1"  forcerange="-30 30" gear="1"/>
+  <motor name="mot_west_1"  tendon="tendon_west_1"  forcerange="-30 30" gear="1"/>
+
+  <motor name="mot_north_2" tendon="tendon_north_2" forcerange="-30 30" gear="1"/>
+  <motor name="mot_south_2" tendon="tendon_south_2" forcerange="-30 30" gear="1"/>
+  <motor name="mot_east_2"  tendon="tendon_east_2"  forcerange="-30 30" gear="1"/>
+  <motor name="mot_west_2"  tendon="tendon_west_2"  forcerange="-30 30" gear="1"/>
 
 </actuator>
 
@@ -262,7 +263,7 @@
     <weld body1="rodB_48" body2="ring_6_body" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
     <weld body1="rodB_56" body2="ring_7_body" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
     <weld body1="rodB_64" body2="ring_8_body" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
-    <weld body1="rodB_72" body2="ring_9_body" solref="0.0001 1"  solimp="0.9 0.9 0.01"/>
+    <weld body1="rodB_71" body2="ring_9_body" solref="0.0001 1"  solimp="0.9 0.9 0.01"/>
     <weld body1="rodB_last" body2="ring_10_body" solref="0.0001 1" solimp="0.9 0.9 0.01"/>
   </equality>
 </mujoco>

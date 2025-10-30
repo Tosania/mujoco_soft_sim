@@ -230,26 +230,18 @@ class SoftRobot:
         }
 
     def run_all_sp(self):
+        a = 0
+        print(time.time())
         while 1:
-            print(
-                self.get_bending_angle(),
-                self.get_tendon_length("tendon_south"),
-            )
+            a += 1
+            if a == 1000:
+                print(time.time())
             mujoco.mj_step(self.model, self.data)
 
 
 # if __name__ == "__main__":
 #     robot = SoftRobot("two_disks_uj.xml")
 #     # robot.save_model_info()
-#     robot.control("len_south_1", 0.19)
-#     robot.control("len_north_1", 0.2)
-#     robot.control("len_west_1", 0.2)
-#     robot.control("len_east_1", 0.2)
 
-#     robot.control("len_south_2", 0.2)
-#     robot.control("len_north_2", 0.2)
-#     robot.control("len_west_2", 0.2)
-#     robot.control("len_east_2", 0.2)
-#     robot.runview()
-# robot.save_model_info()
-# robot.run_all_sp()
+#     # robot.save_model_info()
+#     robot.run_all_sp()
