@@ -15,7 +15,7 @@ import numpy as np
 from simulation import SoftRobot
 
 # ---------- 用户可调参数 ----------
-XML_PATH = "./xml/two_disks_uj.xml"  # 如果你的 xml 在别处，改这里
+XML_PATH = "./source/two_disks_uj.xml"  # 如果你的 xml 在别处，改这里
 FORCE = 20.0  # 按键触发时给电机的控制值（motor 的 ctrl）
 DURATION_S = 0.12  # 每次按键持续时间（秒）
 DT = 0.002  # 仿真步长（应与 xml 中 opt.timestep 一致）

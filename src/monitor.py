@@ -17,7 +17,7 @@ from env_softrod import (
 )  # 复用项目内常量
 
 # —— 如果你的 xml 路径与默认不同可自行改这里 ——
-XML_PATH = "./two_disks_uj.xml"  # 或者你项目里使用的路径
+XML_PATH = "./source/two_disks_uj.xml"  # 或者你项目里使用的路径
 
 
 class EnvGUI:

@@ -74,13 +74,19 @@ def visualize_rollout(model_path=None, steps=1500, fps=60):
 def main():
     # 极简训练配置（你可以把 total_timesteps 调大）
     agent = SoftRodRL(
-        xml_path="./xml/two_disks_uj.xml",  # 你的模型XML
-        n_envs=1,  # 最小可用配置
-        total_timesteps=10_00,  # 先小规模验证流程
-        eval_every_steps=2_00,  # 定期评估并保存best_model
-        eval_episodes=0,
+        xml_path="./source/two_disks_uj.xml",  # 你的模型XML
+        n_envs=12,  # 最小可用配置
+        n_steps=128,
+        total_timesteps=20000,
+        use_callback=False,
+        batch_size=256,
+        learning_rate=1e-4,
+        gamma=0.98,
+        clip_range=0.15,
+        vf_coef=0.7,
         render_mode="none",  # 训练禁用渲染以提速
         log_dir="runs/softrod",  # TensorBoard 日志与模型保存目录
+        goal_cache="source/workspace_points.npy",
         # policy_kwargs / learn_kwargs 都可保持默认
     )
 
@@ -89,10 +95,10 @@ def main():
     print(f"[INFO] Best (or last) model saved at: {best_model_path}")
 
     # 评估：给一个快速的量化结论
-    stats = agent.evaluate(model_path=best_model_path, episodes=5)
-    print(
-        f"[EVAL] mean_reward={stats['mean_reward']:.3f}, std={stats['std_reward']:.3f}"
-    )
+    # stats = agent.evaluate(model_path=best_model_path, episodes=5)
+    # print(
+    #     f"[EVAL] mean_reward={stats['mean_reward']:.3f}, std={stats['std_reward']:.3f}"
+    # )
 
 
 if __name__ == "__main__":

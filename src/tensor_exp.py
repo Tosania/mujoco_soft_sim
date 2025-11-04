@@ -17,7 +17,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 
 def main():
-    XML_PATH = "single_disk.xml"
+    XML_PATH = "./source/single_disk.xml"
     ACT_LEN = "len_north_1"
     TARGET_TENDON = "tendon_north"
     BASE_LEN = 0.20

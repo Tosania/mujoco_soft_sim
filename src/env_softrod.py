@@ -7,6 +7,8 @@ import mujoco
 from simulation import SoftRobot
 from pathlib import Path
 import os
+from stable_baselines3.common.vec_env import VecNormalize
+
 
 # ---- 固定常量 ----
 ACT_NAMES = [
@@ -19,7 +21,7 @@ ACT_NAMES = [
     "mot_east_2",
     "mot_west_2",
 ]
-CTRL_LOW, CTRL_HIGH = -30, 30
+CTRL_LOW, CTRL_HIGH = -100, 100
 DEFAULT_BASE_FORCE = 0
 DT = 0.002
 SUBSTEPS = 5
@@ -40,11 +42,13 @@ class SoftRobotReachEnv(gym.Env):
         xml_path: str = "two_disks_uj.xml",
         render_mode: str = "none",
         seed: Optional[int] = None,
+        goal_cache: Optional[str] = None,
     ):
         super().__init__()
         assert render_mode in ("human", "none")
         self.render_mode = render_mode
-
+        self.goal_cache = goal_cache or str(Path("./source/workspace_points.npy"))
+        self._workspace_pts = np.load(self.goal_cache).astype(np.float32)
         # --- 仿真 ---
         self.robot = SoftRobot(xml_path)
         xml_path = str(Path(xml_path).resolve())
@@ -107,7 +111,11 @@ class SoftRobotReachEnv(gym.Env):
         self.data.ctrl[self._act_ids] = DEFAULT_BASE_FORCE
         mujoco.mj_forward(self.model, self.data)
 
-    # -------- Gym API --------
+    def _sample_goal(self) -> np.ndarray:
+        # 等概率采样一个已知可达的 tip 点
+        idx = self.np_random.integers(0, len(self._workspace_pts))
+        return self._workspace_pts[idx].copy().astype(np.float32)
+
     def reset(
         self, *, seed: Optional[int] = None, options: Optional[Dict[str, Any]] = None
     ):
@@ -120,10 +128,7 @@ class SoftRobotReachEnv(gym.Env):
         mujoco.mj_forward(self.model, self.data)
 
         # ✅ 改为三个独立随机数（立方体采样）
-        rand_offset = self.np_random.uniform(-GOAL_RADIUS, GOAL_RADIUS, size=3).astype(
-            np.float32
-        )
-        self._goal = GOAL_CENTER + rand_offset
+        self._goal = self._sample_goal()
 
         self._step_count = 0
         return self._get_obs(), {"goal": self._goal.copy()}
